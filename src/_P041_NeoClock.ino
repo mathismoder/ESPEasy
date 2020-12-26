@@ -1,12 +1,14 @@
 #include "_Plugin_Helper.h"
-#ifdef USES_P041
+
+
+//#ifdef USES_P041
 //#######################################################################################################
 //#################################### Plugin 041: NeoPixel clock #######################################
 //#######################################################################################################
 #include <Adafruit_NeoPixel.h>
+#include "src/Globals/ESPEasy_time.h"
 
-
-#define NUM_LEDS      114
+#define NUM_LEDS      110
 
 byte Plugin_041_red = 0;
 byte Plugin_041_green = 0;
@@ -59,9 +61,9 @@ boolean Plugin_041(byte function, struct EventStruct *event, String& string)
 
     case PLUGIN_WEBFORM_LOAD:
       {
-      	addFormNumericBox(F("Red"), F("p041_red"), PCONFIG(0), 0, 255);
-      	addFormNumericBox(F("Green"), F("p041_green"), PCONFIG(1), 0, 255);
-      	addFormNumericBox(F("Blue"), F("p041_blue"), PCONFIG(2), 0, 255);
+        addFormNumericBox(F("Red"), F("p041_red"), PCONFIG(0), 0, 255);
+        addFormNumericBox(F("Green"), F("p041_green"), PCONFIG(1), 0, 255);
+        addFormNumericBox(F("Blue"), F("p041_blue"), PCONFIG(2), 0, 255);
         success = true;
         break;
       }
@@ -99,20 +101,24 @@ boolean Plugin_041(byte function, struct EventStruct *event, String& string)
         break;
       }
 
+
     case PLUGIN_ONCE_A_SECOND:
       {
         //int ldrVal = map(analogRead(A0), 0, 1023, 15, 245);
-        //serialPrint("LDR value: ");
-        //serialPrintln(ldrVal);
-        //Plugin_041_pixels->setBrightness(255-ldrVal);
+        //     Serial.print("LDR value: ");
+        //     Serial.println(ldrVal, DEC);
+        //Plugin_041_pixels->setBrightness(255 - ldrVal);
         //Plugin_041_pixels->show(); // This sends the updated pixel color to the hardware.
+        //Plugin_041_update();
         success = true;
         break;
       }
+      
 
     case PLUGIN_WRITE:
       {
         String cmd = parseString(string, 1);
+
         if (cmd.equalsIgnoreCase(F("NeoClockColor")))
         {
           Plugin_041_red = event->Par1;
@@ -169,6 +175,16 @@ void pushToStrip(int ledId) {
   Plugin_041_pixels->setPixelColor(ledId, Plugin_041_pixels->Color(Plugin_041_red, Plugin_041_green, Plugin_041_blue));
 }
 
+void pushToStripArr(int positions[], int sizeArr) {
+  for (int i = 0; i < sizeArr; i++) {
+    // we count from 1, setPixelColor needs from 0
+    pushToStrip(positions[i] - 1);
+    //    Serial.print(positions[i]-1);
+    //    Serial.print(',');
+  }
+  //  Serial.println(sizeArr);
+}
+
 void timeToStrip(uint8_t hours, uint8_t minutes)
 {
   pushIT_IS();
@@ -183,9 +199,8 @@ void timeToStrip(uint8_t hours, uint8_t minutes)
     pushQUATER();
     pushAFTER();
   } else if (minutes >= 20 && minutes < 25) {
-    pushTEN1();
-    pushFOR();
-    pushHALF();
+    pushTWENTY();
+    pushAFTER();
   } else if (minutes >= 25 && minutes < 30) {
     pushFIVE1();
     pushFOR();
@@ -197,9 +212,8 @@ void timeToStrip(uint8_t hours, uint8_t minutes)
     pushAFTER();
     pushHALF();
   } else if (minutes >= 40 && minutes < 45) {
-    pushTEN1();
-    pushAFTER();
-    pushHALF();
+    pushTWENTY();
+    pushFOR();
   } else if (minutes >= 45 && minutes < 50) {
     pushQUATER();
     pushFOR();
@@ -211,34 +225,13 @@ void timeToStrip(uint8_t hours, uint8_t minutes)
     pushFOR();
   }
 
-  int singleMinutes = minutes % 5;
-  switch (singleMinutes) {
-    case 1:
-      pushM_ONE();
-      break;
-    case 2:
-      pushM_ONE();
-      pushM_TWO();
-      break;
-    case 3:
-      pushM_ONE();
-      pushM_TWO();
-      pushM_THREE();
-      break;
-    case 4:
-      pushM_ONE();
-      pushM_TWO();
-      pushM_THREE();
-      pushM_FOUR();
-      break;
-  }
   if (hours >= 12) {
     hours -= 12;
   }
   if (hours == 12) {
     hours = 0;
   }
-  if (minutes >= 20) {
+  if (minutes >= 25) {
     hours++;
   }
 
@@ -248,7 +241,11 @@ void timeToStrip(uint8_t hours, uint8_t minutes)
       pushTWELVE();
       break;
     case 1:
-      pushONE();
+      if (minutes < 5) {
+        pushONE();
+      } else {
+        pushONEs();
+      }
       break;
     case 2:
       pushTWO();
@@ -290,147 +287,93 @@ void timeToStrip(uint8_t hours, uint8_t minutes)
   }
 }
 
-void pushM_ONE() {
-  pushToStrip(0);
-}
-void pushM_TWO() {
-  pushToStrip(12);
-}
-void pushM_THREE() {
-  pushToStrip(101);
-}
-void pushM_FOUR() {
-  pushToStrip(113);
-}
 void pushIT_IS()  {
-  pushToStrip(1);
-  pushToStrip(2);
-  pushToStrip(3);
-  pushToStrip(5);
-  pushToStrip(6);
+  int positions[] = {100, 101, 103, 104, 105};
+
+  pushToStripArr(positions, 5);
 }
 void pushAFTER() {
-  pushToStrip(36);
-  pushToStrip(37);
-  pushToStrip(38);
-  pushToStrip(39);
+  int positions[] = {72, 73, 74, 75};
+  pushToStripArr(positions, 4);
 }
 void pushQUATER() {
-  pushToStrip(30);
-  pushToStrip(31);
-  pushToStrip(32);
-  pushToStrip(33);
-  pushToStrip(34);
+  int positions[] = {82, 83, 84, 85, 86, 87, 88};
+  pushToStripArr(positions, 7);
 }
 void pushFOR() {
-  pushToStrip(41);
-  pushToStrip(42);
-  pushToStrip(43);
-  pushToStrip(44);
+  int positions[] = {71, 70, 69};
+  pushToStripArr(positions, 3);
 }
 void pushHALF() {
-  pushToStrip(50);
-  pushToStrip(51);
-  pushToStrip(52);
-  pushToStrip(53);
+  int positions[] = {56, 57, 58, 59};
+  pushToStripArr(positions, 4);
 }
 void pushONE()  {
-  pushToStrip(63);
-  pushToStrip(64);
-  pushToStrip(65);
+  int positions[] = {53, 52, 51};
+  pushToStripArr(positions, 3);
+}
+void pushONEs()  {
+  int positions[] = {53, 52, 51, 50};
+  pushToStripArr(positions, 4);
 }
 void pushTWO() {
-  pushToStrip(64);
-  pushToStrip(65);
-  pushToStrip(66);
-  pushToStrip(67);
+  int positions[] = {55, 54, 53, 52};
+  pushToStripArr(positions, 4);
 }
 void pushTHREE() {
-  pushToStrip(109);
-  pushToStrip(110);
-  pushToStrip(111);
-  pushToStrip(112);
+  int positions[] = {35, 36, 37, 38};
+  pushToStripArr(positions, 4);
 }
 void pushFOUR() {
-  pushToStrip(57);
-  pushToStrip(58);
-  pushToStrip(59);
-  pushToStrip(60);
+  int positions[] = {26, 25, 24, 23};
+  pushToStripArr(positions, 4);
 }
 void pushFIVE1() {
-  pushToStrip(8);
-  pushToStrip(9);
-  pushToStrip(10);
-  pushToStrip(11);
+  int positions[] = {107, 108, 109, 110};
+  pushToStripArr(positions, 4);
 }
 void pushFIVE2() {
-  pushToStrip(92);
-  pushToStrip(93);
-  pushToStrip(94);
-  pushToStrip(95);
+  int positions[] = {41, 42, 43, 44};
+  pushToStripArr(positions, 4);
 }
 void pushSIX() {
-  pushToStrip(69);
-  pushToStrip(88);
-  pushToStrip(91);
+  int positions[] = {10, 9, 8, 7, 6};
+  pushToStripArr(positions, 5);
 }
 void pushSEVEN() {
-  pushToStrip(69);
-  pushToStrip(70);
-  pushToStrip(71);
-  pushToStrip(72);
-  pushToStrip(73);
+  int positions[] = {50, 49, 48, 47, 46, 45};
+  pushToStripArr(positions, 6);
 }
 void pushEIGHT() {
-  pushToStrip(97);
-  pushToStrip(98);
-  pushToStrip(99);
-  pushToStrip(100);
+  int positions[] = {13, 14, 15, 16};
+  pushToStripArr(positions, 4);
 }
 void pushNINE() {
-  pushToStrip(73);
-  pushToStrip(74);
-  pushToStrip(75);
-  pushToStrip(76);
-  pushToStrip(77);
+  int positions[] = {30, 29, 28, 27};
+  pushToStripArr(positions, 4);
 }
 void pushTEN() {
-  pushToStrip(54);
-  pushToStrip(59);
-  pushToStrip(76);
-  pushToStrip(81);
+  int positions[] = {17, 18, 19, 20};
+  pushToStripArr(positions, 4);
 }
 void pushTEN1() {
-  pushToStrip(25);
-  pushToStrip(26);
-  pushToStrip(27);
-  pushToStrip(28);
+  int positions[] = {99, 98, 97, 96};
+  pushToStripArr(positions, 4);
 }
 void pushELEVEN() {
-  pushToStrip(107);
-  pushToStrip(108);
-  pushToStrip(109);
+  int positions[] = {33, 32, 31};
+  pushToStripArr(positions, 3);
 }
 void pushTWELVE() {
-  pushToStrip(82);
-  pushToStrip(83);
-  pushToStrip(84);
-  pushToStrip(85);
-  pushToStrip(86);
-  pushToStrip(87);
+  int positions[] = {61, 62, 63, 64, 65};
+  pushToStripArr(positions, 5);
 }
 void pushTWENTY() {
-  pushToStrip(16);
-  pushToStrip(17);
-  pushToStrip(18);
-  pushToStrip(19);
-  pushToStrip(20);
-  pushToStrip(21);
-  pushToStrip(22);
+  int positions[] = {95, 94, 93, 92, 91, 90, 89};
+  pushToStripArr(positions, 7);
 }
 void pushHOURE() {
-  pushToStrip(102);
-  pushToStrip(103);
-  pushToStrip(104);
+  int positions[] = {3, 2, 1};
+  pushToStripArr(positions, 3);
 }
-#endif // USES_P041
+// #endif // USES_P041
